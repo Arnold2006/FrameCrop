@@ -19,6 +19,10 @@ module.exports = {
             event: "/FrameCrop server ready on port (\\d+)/",
             done: true,
           },
+          {
+            event: "/\\[FrameCrop\\] Server error:/",
+            done: true,
+          },
         ],
       },
     },
