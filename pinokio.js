@@ -49,6 +49,11 @@ module.exports = {
         href: "start.js",
       },
       {
+        icon: "fa-solid fa-arrows-rotate",
+        text: "Update",
+        href: "update.js",
+      },
+      {
         icon: "fa-solid fa-download",
         text: "Install",
         href: "install.js",

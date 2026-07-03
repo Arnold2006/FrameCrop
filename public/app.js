@@ -13,7 +13,7 @@
 
   // ─── DOM refs ───────────────────────────────────────────────────────────────
   const $grid = document.getElementById("imageGrid");
-  const $btnChoose = document.getElementById("btnChooseFolder");
+  const $btnChooseFolder = document.getElementById("btnChooseFolder");
   const $folderLabel = document.getElementById("currentFolder");
   const $btnCropAll = document.getElementById("btnCropAll");
   const $btnTheme = document.getElementById("btnTheme");
