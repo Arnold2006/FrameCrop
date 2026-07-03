@@ -7,6 +7,14 @@ const fs = require("fs");
 const os = require("os");
 const sharp = require("sharp");
 
+// ─── Global error handlers to prevent process crashes ────────────────────────
+process.on("uncaughtException", (err) => {
+  console.error("[FrameCrop] Uncaught exception (kept alive):", err.message);
+});
+process.on("unhandledRejection", (reason) => {
+  console.error("[FrameCrop] Unhandled rejection (kept alive):", reason);
+});
+
 const app = express();
 app.use(express.json({ limit: "50mb" }));
 app.use(express.static(path.join(__dirname, "..", "public")));
@@ -25,14 +33,25 @@ app.get("/api/browse", async (req, res) => {
     // Default: home directory or drive roots on Windows
     if (!target) {
       if (process.platform === "win32") {
-        // Return drive letters
-        const { execSync } = require("child_process");
-        const drives = execSync("wmic logicaldisk get name", { encoding: "utf8" })
-          .split("\n")
-          .map((l) => l.trim())
-          .filter((l) => /^[A-Z]:$/.test(l))
-          .map((d) => d + "\\");
-        return res.json({ path: "", entries: drives.map((d) => ({ name: d, type: "folder" })) });
+        // Return drive letters using PowerShell (wmic is deprecated/removed in newer Windows)
+        try {
+          const { execSync } = require("child_process");
+          const raw = execSync(
+            'powershell -NoProfile -Command "[System.IO.DriveInfo]::GetDrives() | ForEach-Object { $_.Name }"',
+            { encoding: "utf8", timeout: 5000 }
+          );
+          const drives = raw
+            .split(/\r?\n/)
+            .map((l) => l.trim())
+            .filter((l) => /^[A-Z]:\\?$/i.test(l))
+            .map((d) => (d.endsWith("\\") ? d : d + "\\"));
+          if (drives.length > 0) {
+            return res.json({ path: "", entries: drives.map((d) => ({ name: d, type: "folder" })) });
+          }
+        } catch (driveErr) {
+          console.error("[FrameCrop] Could not list drives:", driveErr.message);
+        }
+        // Fallback to home directory if drive listing fails
       }
       target = os.homedir();
     }
@@ -139,6 +158,31 @@ app.post("/api/crop", async (req, res) => {
 
 // ─── Start server ───────────────────────────────────────────────────────────
 const PORT = process.env.PORT || 3456;
-app.listen(PORT, () => {
-  console.log(`FrameCrop server ready on port ${PORT}`);
-});
+
+function startServer(port, retries) {
+  const server = app.listen(port, () => {
+    console.log(`FrameCrop server ready on port ${port}`);
+  });
+
+  server.on("error", (err) => {
+    if (err.code === "EADDRINUSE" && retries > 0) {
+      console.warn(`[FrameCrop] Port ${port} in use, trying ${port + 1}…`);
+      startServer(port + 1, retries - 1);
+    } else {
+      console.error("[FrameCrop] Server error:", err.message);
+      // Don't exit – keep the process alive so Pinokio doesn't report "stopped"
+    }
+  });
+
+  // Graceful shutdown
+  process.on("SIGTERM", () => {
+    console.log("[FrameCrop] Received SIGTERM, shutting down…");
+    server.close(() => process.exit(0));
+  });
+  process.on("SIGINT", () => {
+    console.log("[FrameCrop] Received SIGINT, shutting down…");
+    server.close(() => process.exit(0));
+  });
+}
+
+startServer(PORT, 3);
