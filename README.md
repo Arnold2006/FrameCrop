@@ -2,6 +2,8 @@
 
 A Pinokio 7.x app for batch-cropping images to a chosen aspect ratio using a draggable/resizable crop overlay on each image thumbnail.
 
+![FrameCrop Screenshot](screenshot.png)
+
 ## Features
 
 - **Folder browser** – Browse and select any local folder containing images
