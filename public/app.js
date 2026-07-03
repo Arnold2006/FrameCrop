@@ -87,7 +87,9 @@
   $btnChooseFolder.addEventListener("click", () => {
     browsePath = "";
     $modal.classList.remove("hidden");
-    loadBrowse("");
+    loadBrowse("").catch((err) => {
+      showBrowseError(err.message);
+    });
   });
   $btnCloseModal.addEventListener("click", () => $modal.classList.add("hidden"));
   $btnSelectFolder.addEventListener("click", () => {
@@ -98,13 +100,24 @@
   });
 
   async function loadBrowse(p) {
+    $modalBody.innerHTML = '<div style="padding:16px;color:var(--text-muted)">Loading…</div>';
+    $modalPath.textContent = p || "(Root)";
+
     const url = "/api/browse" + (p ? "?path=" + encodeURIComponent(p) : "");
     const resp = await fetch(url);
+    if (!resp.ok) {
+      const errData = await resp.json().catch(() => ({}));
+      throw new Error(errData.error || "Server returned " + resp.status);
+    }
     const data = await resp.json();
     browsePath = data.path || "";
     $modalPath.textContent = browsePath || "(Root)";
 
     $modalBody.innerHTML = "";
+
+    if (!data.entries || data.entries.length === 0) {
+      $modalBody.innerHTML = '<div style="padding:16px;color:var(--text-muted)">No subfolders found</div>';
+    }
 
     // Parent link
     if (browsePath) {
@@ -112,7 +125,11 @@
       const el = document.createElement("div");
       el.className = "folder-item parent";
       el.textContent = "⬆️ ..";
-      el.addEventListener("click", () => loadBrowse(parent));
+      el.addEventListener("click", () => {
+        loadBrowse(parent).catch((err) => {
+          showBrowseError(err.message);
+        });
+      });
       $modalBody.appendChild(el);
     }
 
@@ -124,7 +141,11 @@
       const fullPath = browsePath
         ? browsePath + (browsePath.endsWith("/") || browsePath.endsWith("\\") ? "" : "/") + entry.name
         : entry.name;
-      el.addEventListener("click", () => loadBrowse(fullPath));
+      el.addEventListener("click", () => {
+        loadBrowse(fullPath).catch((err) => {
+          showBrowseError(err.message);
+        });
+      });
       $modalBody.appendChild(el);
     }
   }
@@ -542,5 +563,9 @@
     const div = document.createElement("div");
     div.textContent = s;
     return div.innerHTML;
+  }
+
+  function showBrowseError(msg) {
+    $modalBody.innerHTML = '<div style="padding:16px;color:#ef4444">Error: ' + escHtml(msg) + "</div>";
   }
 })();
