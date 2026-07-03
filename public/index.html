@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FrameCrop</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <!-- Top controls -->
+  <header id="header">
+    <div class="header-row">
+      <button id="btnChooseFolder" class="btn btn-primary">📁 Choose Folder</button>
+      <span id="currentFolder" class="folder-label">No folder selected</span>
+      <div class="spacer"></div>
+      <button id="btnTheme" class="btn btn-sm" title="Toggle theme">🌙</button>
+    </div>
+    <div class="header-row">
+      <div class="ratio-group">
+        <span class="label">Ratio:</span>
+        <button class="btn btn-ratio active" data-ratio="1:1">1:1</button>
+        <button class="btn btn-ratio" data-ratio="4:3">4:3</button>
+        <button class="btn btn-ratio" data-ratio="3:4">3:4</button>
+        <button class="btn btn-ratio" data-ratio="16:9">16:9</button>
+        <button class="btn btn-ratio" data-ratio="9:16">9:16</button>
+        <button class="btn btn-ratio" data-ratio="3:2">3:2</button>
+        <button class="btn btn-ratio" data-ratio="2:3">2:3</button>
+        <div class="custom-ratio">
+          <input type="number" id="customW" min="1" value="1" class="input-sm">
+          <span>:</span>
+          <input type="number" id="customH" min="1" value="1" class="input-sm">
+          <button class="btn btn-ratio" data-ratio="custom">Custom</button>
+        </div>
+      </div>
+    </div>
+    <div class="header-row">
+      <div class="grid-toggle">
+        <span class="label">Grid:</span>
+        <button class="btn btn-grid active" data-cols="2">2 cols</button>
+        <button class="btn btn-grid" data-cols="3">3 cols</button>
+      </div>
+      <div class="spacer"></div>
+      <button id="btnCropAll" class="btn btn-success" disabled>✂️ Crop All & Save</button>
+    </div>
+  </header>
+
+  <!-- Status bar -->
+  <div id="statusBar" class="status-bar hidden"></div>
+
+  <!-- Image grid -->
+  <main id="imageGrid" class="image-grid cols-2"></main>
+
+  <!-- Folder browser modal -->
+  <div id="folderModal" class="modal hidden">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>Choose Folder</h3>
+        <button id="btnCloseModal" class="btn btn-sm">✕</button>
+      </div>
+      <div class="modal-path" id="modalPath"></div>
+      <div class="modal-body" id="modalBody"></div>
+      <div class="modal-footer">
+        <button id="btnSelectFolder" class="btn btn-primary">Select This Folder</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
