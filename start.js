@@ -7,6 +7,12 @@ module.exports = {
     {
       method: "shell.run",
       params: {
+        message: "npm install",
+      },
+    },
+    {
+      method: "shell.run",
+      params: {
         message: "node server/index.js",
         on: [
           {

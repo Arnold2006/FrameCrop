@@ -31,6 +31,34 @@ npm start
 
 Then open `http://localhost:3456` in your browser.
 
+## Troubleshooting
+
+### "Cannot find module 'express'" or similar errors
+
+This means Node.js dependencies are not installed. Run:
+
+```bash
+npm install
+```
+
+If the problem persists, try a clean reinstall:
+
+```bash
+rm -rf node_modules
+npm cache clean --force
+npm install
+```
+
+### Sharp fails to load
+
+Sharp requires platform-specific native binaries. If you see errors related to sharp, run:
+
+```bash
+npm install --force
+```
+
+This ensures the correct binaries are downloaded for your operating system.
+
 ## How It Works
 
 1. Click **Choose Folder** and navigate to a folder containing images (JPG, PNG, WebP).
