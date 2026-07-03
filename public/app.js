@@ -88,7 +88,7 @@
     browsePath = "";
     $modal.classList.remove("hidden");
     loadBrowse("").catch((err) => {
-      $modalBody.innerHTML = '<div style="padding:16px;color:#ef4444">Error loading folders: ' + escHtml(err.message) + "</div>";
+      showBrowseError(err.message);
     });
   });
   $btnCloseModal.addEventListener("click", () => $modal.classList.add("hidden"));
@@ -127,7 +127,7 @@
       el.textContent = "⬆️ ..";
       el.addEventListener("click", () => {
         loadBrowse(parent).catch((err) => {
-          $modalBody.innerHTML = '<div style="padding:16px;color:#ef4444">Error: ' + escHtml(err.message) + "</div>";
+          showBrowseError(err.message);
         });
       });
       $modalBody.appendChild(el);
@@ -143,7 +143,7 @@
         : entry.name;
       el.addEventListener("click", () => {
         loadBrowse(fullPath).catch((err) => {
-          $modalBody.innerHTML = '<div style="padding:16px;color:#ef4444">Error: ' + escHtml(err.message) + "</div>";
+          showBrowseError(err.message);
         });
       });
       $modalBody.appendChild(el);
@@ -563,5 +563,9 @@
     const div = document.createElement("div");
     div.textContent = s;
     return div.innerHTML;
+  }
+
+  function showBrowseError(msg) {
+    $modalBody.innerHTML = '<div style="padding:16px;color:#ef4444">Error: ' + escHtml(msg) + "</div>";
   }
 })();
