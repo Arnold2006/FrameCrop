@@ -6,7 +6,7 @@ module.exports = {
     {
       method: "shell.run",
       params: {
-        message: "npm install",
+        message: "npm install --include=optional",
       },
     },
     {
