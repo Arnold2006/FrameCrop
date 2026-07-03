@@ -6,7 +6,7 @@ module.exports = {
     {
       method: "shell.run",
       params: {
-        message: "rm -rf node_modules package-lock.json",
+        message: "node -e \"const fs=require('fs');const p=require('path');['node_modules','package-lock.json'].forEach(f=>{const fp=p.resolve(f);try{fs.rmSync(fp,{recursive:true,force:true})}catch(e){}});console.log('Cleaned')\"",
       },
     },
     {
