@@ -9,10 +9,10 @@ const sharp = require("sharp");
 
 // ─── Global error handlers to prevent process crashes ────────────────────────
 process.on("uncaughtException", (err) => {
-  console.error("[FrameCrop] Uncaught exception (kept alive):", err.message);
+  console.error("[FrameCrop] Uncaught exception (kept alive):", err.stack || err.message);
 });
 process.on("unhandledRejection", (reason) => {
-  console.error("[FrameCrop] Unhandled rejection (kept alive):", reason);
+  console.error("[FrameCrop] Unhandled rejection (kept alive):", reason instanceof Error ? reason.stack : reason);
 });
 
 const app = express();
@@ -159,27 +159,26 @@ app.post("/api/crop", async (req, res) => {
 // ─── Start server ───────────────────────────────────────────────────────────
 const PORT = process.env.PORT || 3456;
 
-function startServer(port, retries) {
+function startServer(port, retriesRemaining) {
   const server = app.listen(port, () => {
     console.log(`FrameCrop server ready on port ${port}`);
   });
 
   server.on("error", (err) => {
-    if (err.code === "EADDRINUSE" && retries > 0) {
+    if (err.code === "EADDRINUSE" && retriesRemaining > 0) {
       console.warn(`[FrameCrop] Port ${port} in use, trying ${port + 1}…`);
-      startServer(port + 1, retries - 1);
+      startServer(port + 1, retriesRemaining - 1);
     } else {
       console.error("[FrameCrop] Server error:", err.message);
-      // Don't exit – keep the process alive so Pinokio doesn't report "stopped"
     }
   });
 
-  // Graceful shutdown
-  process.on("SIGTERM", () => {
+  // Graceful shutdown (use once to avoid duplicate handlers on port retry)
+  process.once("SIGTERM", () => {
     console.log("[FrameCrop] Received SIGTERM, shutting down…");
     server.close(() => process.exit(0));
   });
-  process.on("SIGINT", () => {
+  process.once("SIGINT", () => {
     console.log("[FrameCrop] Received SIGINT, shutting down…");
     server.close(() => process.exit(0));
   });
