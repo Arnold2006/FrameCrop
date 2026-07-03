@@ -10,6 +10,12 @@ module.exports = {
       },
     },
     {
+      method: "shell.run",
+      params: {
+        message: "npm rebuild sharp",
+      },
+    },
+    {
       method: "notify",
       params: {
         html: "✅ <b>FrameCrop</b> installed! Click <b>Start</b> to launch.",

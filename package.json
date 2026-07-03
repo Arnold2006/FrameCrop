@@ -9,5 +9,11 @@
   "dependencies": {
     "express": "^4.18.2",
     "sharp": "^0.33.2"
+  },
+  "optionalDependencies": {
+    "@img/sharp-win32-x64": "^0.33.2",
+    "@img/sharp-linux-x64": "^0.33.2",
+    "@img/sharp-darwin-arm64": "^0.33.2",
+    "@img/sharp-darwin-x64": "^0.33.2"
   }
 }

@@ -6,7 +6,7 @@ module.exports = {
     {
       method: "script.stop",
       params: {
-        uri: "start.js",
+        uri: "{{self.dir}}/start.js",
       },
     },
     {
