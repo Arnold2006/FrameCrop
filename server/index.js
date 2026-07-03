@@ -20,7 +20,7 @@ function isImage(filename) {
 // ─── GET /api/browse ────────────────────────────────────────────────────────
 app.get("/api/browse", async (req, res) => {
   try {
-    let target = req.query.path || "";
+    let target = req.query.path ? path.resolve(req.query.path) : "";
 
     // Default: home directory or drive roots on Windows
     if (!target) {
@@ -55,7 +55,7 @@ app.get("/api/browse", async (req, res) => {
 // ─── GET /api/images ────────────────────────────────────────────────────────
 app.get("/api/images", async (req, res) => {
   try {
-    const folder = req.query.folder;
+    const folder = req.query.folder ? path.resolve(req.query.folder) : "";
     if (!folder) return res.status(400).json({ error: "folder required" });
 
     const items = await fs.promises.readdir(folder, { withFileTypes: true });
@@ -86,7 +86,8 @@ app.get("/api/thumb", async (req, res) => {
     const { folder, file } = req.query;
     if (!folder || !file) return res.status(400).json({ error: "folder and file required" });
 
-    const filePath = path.join(folder, file);
+    const resolvedFolder = path.resolve(folder);
+    const filePath = path.join(resolvedFolder, path.basename(file));
     const buffer = await sharp(filePath)
       .resize({ width: 500, height: 500, fit: "inside", withoutEnlargement: true })
       .jpeg({ quality: 80 })
@@ -111,10 +112,11 @@ app.post("/api/crop", async (req, res) => {
     const results = [];
     for (const job of jobs) {
       const { folder, file, cropX, cropY, cropWidth, cropHeight } = job;
-      const srcPath = path.join(folder, file);
-      const outDir = path.join(folder, "cropped");
+      const resolvedFolder = path.resolve(folder);
+      const srcPath = path.join(resolvedFolder, path.basename(file));
+      const outDir = path.join(resolvedFolder, "cropped");
       await fs.promises.mkdir(outDir, { recursive: true });
-      const outPath = path.join(outDir, file);
+      const outPath = path.join(outDir, path.basename(file));
 
       await sharp(srcPath)
         .extract({
