@@ -15,7 +15,7 @@ module.exports = {
     {
       method: "shell.run",
       params: {
-        message: "node -e \"require('express'); require('jimp'); console.log('All dependencies OK')\"",
+        message: "node -e \"const { Jimp } = require('jimp'); require('express'); console.log('All dependencies OK')\"",
       },
     },
     {

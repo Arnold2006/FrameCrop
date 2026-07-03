@@ -110,14 +110,10 @@ app.get("/api/thumb", async (req, res) => {
     const filePath = path.join(resolvedFolder, path.basename(file));
     const img = await Jimp.read(filePath);
 
-    // Resize to fit within 500x500 without enlarging
+    // Resize to fit within 500x500 without enlarging, maintaining aspect ratio
     const maxDim = 500;
     if (img.width > maxDim || img.height > maxDim) {
-      if (img.width > img.height) {
-        img.resize({ w: maxDim });
-      } else {
-        img.resize({ h: maxDim });
-      }
+      img.scaleToFit({ w: maxDim, h: maxDim });
     }
 
     const buffer = await img.getBuffer("image/jpeg", { quality: 80 });
@@ -167,7 +163,8 @@ app.post("/api/crop", async (req, res) => {
 });
 
 // ─── Start server ───────────────────────────────────────────────────────────
-const PORT = parseInt(process.env.PORT, 10) || 3456;
+const parsedPort = parseInt(process.env.PORT, 10);
+const PORT = (parsedPort > 0 && parsedPort <= 65535) ? parsedPort : 3456;
 
 let activeServer = null;
 
@@ -188,11 +185,13 @@ function startServer(port, retriesRemaining) {
   });
 }
 
+const SHUTDOWN_TIMEOUT_MS = 5000;
+
 function shutdown() {
   if (activeServer) {
     activeServer.close(() => process.exit(0));
-    // Force exit after 5 seconds if connections don't close
-    setTimeout(() => process.exit(0), 5000).unref();
+    // Force exit if connections don't close in time
+    setTimeout(() => process.exit(0), SHUTDOWN_TIMEOUT_MS).unref();
   } else {
     process.exit(0);
   }
