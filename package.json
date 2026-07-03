@@ -1,6 +1,6 @@
 {
   "name": "framecrop",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "description": "Batch-crop images to a chosen aspect ratio with a draggable/resizable crop overlay",
   "main": "server/index.js",
   "scripts": {
@@ -8,11 +8,6 @@
   },
   "dependencies": {
     "express": "^4.18.2",
-    "sharp": "0.33.2",
-    "@img/sharp-win32-x64": "0.33.2",
-    "@img/sharp-linux-x64": "0.33.2",
-    "@img/sharp-darwin-arm64": "0.33.2",
-    "@img/sharp-darwin-x64": "0.33.2",
-    "@img/sharp-linux-arm64": "0.33.2"
+    "jimp": "^1.6.1"
   }
 }
