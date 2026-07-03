@@ -159,8 +159,12 @@ app.post("/api/crop", async (req, res) => {
 // ─── Start server ───────────────────────────────────────────────────────────
 const PORT = process.env.PORT || 3456;
 
+// Track the active server instance so signal handlers always close the right one
+let activeServer = null;
+
 function startServer(port, retriesRemaining) {
   const server = app.listen(port, () => {
+    activeServer = server;
     console.log(`FrameCrop server ready on port ${port}`);
   });
 
@@ -170,18 +174,28 @@ function startServer(port, retriesRemaining) {
       startServer(port + 1, retriesRemaining - 1);
     } else {
       console.error("[FrameCrop] Server error:", err.message);
+      // Exit so Pinokio detects the failure cleanly instead of leaving a zombie process
+      process.exit(1);
     }
   });
-
-  // Graceful shutdown (use once to avoid duplicate handlers on port retry)
-  process.once("SIGTERM", () => {
-    console.log("[FrameCrop] Received SIGTERM, shutting down…");
-    server.close(() => process.exit(0));
-  });
-  process.once("SIGINT", () => {
-    console.log("[FrameCrop] Received SIGINT, shutting down…");
-    server.close(() => process.exit(0));
-  });
 }
+
+// Register signal handlers once, referencing the active server
+process.once("SIGTERM", () => {
+  console.log("[FrameCrop] Received SIGTERM, shutting down…");
+  if (activeServer) {
+    activeServer.close(() => process.exit(0));
+  } else {
+    process.exit(0);
+  }
+});
+process.once("SIGINT", () => {
+  console.log("[FrameCrop] Received SIGINT, shutting down…");
+  if (activeServer) {
+    activeServer.close(() => process.exit(0));
+  } else {
+    process.exit(0);
+  }
+});
 
 startServer(PORT, 3);
