@@ -24,7 +24,7 @@ module.exports = {
     {
       method: "shell.run",
       params: {
-        message: "node -e \"require('sharp'); console.log('sharp OK')\"",
+        message: "node -e \"require('express'); require('sharp'); console.log('All dependencies OK')\"",
       },
     },
     {
