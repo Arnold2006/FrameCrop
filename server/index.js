@@ -1,11 +1,14 @@
 /**
  * server/index.js – FrameCrop Express backend
+ *
+ * Uses Jimp (pure JavaScript) for image processing – no native binaries needed.
+ * This eliminates platform-specific Sharp installation issues (PRs #3-#5).
  */
 const express = require("express");
 const path = require("path");
 const fs = require("fs");
 const os = require("os");
-const sharp = require("sharp");
+const { Jimp } = require("jimp");
 
 // ─── Global error handlers to prevent process crashes ────────────────────────
 process.on("uncaughtException", (err) => {
@@ -19,7 +22,7 @@ const app = express();
 app.use(express.json({ limit: "50mb" }));
 app.use(express.static(path.join(__dirname, "..", "public")));
 
-const IMAGE_EXTS = new Set([".jpg", ".jpeg", ".png", ".webp"]);
+const IMAGE_EXTS = new Set([".jpg", ".jpeg", ".png", ".webp", ".bmp", ".tiff", ".gif"]);
 
 function isImage(filename) {
   return IMAGE_EXTS.has(path.extname(filename).toLowerCase());
@@ -33,7 +36,6 @@ app.get("/api/browse", async (req, res) => {
     // Default: home directory or drive roots on Windows
     if (!target) {
       if (process.platform === "win32") {
-        // Return drive letters using PowerShell (wmic is deprecated/removed in newer Windows)
         try {
           const { execSync } = require("child_process");
           const raw = execSync(
@@ -51,7 +53,6 @@ app.get("/api/browse", async (req, res) => {
         } catch (driveErr) {
           console.error("[FrameCrop] Could not list drives:", driveErr.message);
         }
-        // Fallback to home directory if drive listing fails
       }
       target = os.homedir();
     }
@@ -82,11 +83,11 @@ app.get("/api/images", async (req, res) => {
     for (const item of items) {
       if (!item.isFile() || !isImage(item.name)) continue;
       try {
-        const meta = await sharp(path.join(folder, item.name)).metadata();
+        const img = await Jimp.read(path.join(folder, item.name));
         images.push({
           file: item.name,
-          width: meta.width,
-          height: meta.height,
+          width: img.width,
+          height: img.height,
         });
       } catch (e) {
         // skip unreadable images
@@ -107,10 +108,15 @@ app.get("/api/thumb", async (req, res) => {
 
     const resolvedFolder = path.resolve(folder);
     const filePath = path.join(resolvedFolder, path.basename(file));
-    const buffer = await sharp(filePath)
-      .resize({ width: 500, height: 500, fit: "inside", withoutEnlargement: true })
-      .jpeg({ quality: 80 })
-      .toBuffer();
+    const img = await Jimp.read(filePath);
+
+    // Resize to fit within 500x500 without enlarging, maintaining aspect ratio
+    const maxDim = 500;
+    if (img.width > maxDim || img.height > maxDim) {
+      img.scaleToFit({ w: maxDim, h: maxDim });
+    }
+
+    const buffer = await img.getBuffer("image/jpeg", { quality: 80 });
 
     res.set("Content-Type", "image/jpeg");
     res.set("Cache-Control", "public, max-age=3600");
@@ -137,19 +143,19 @@ app.post("/api/crop", async (req, res) => {
       await fs.promises.mkdir(outDir, { recursive: true });
       const outPath = path.join(outDir, path.basename(file));
 
-      await sharp(srcPath)
-        .extract({
-          left: Math.round(cropX),
-          top: Math.round(cropY),
-          width: Math.round(cropWidth),
-          height: Math.round(cropHeight),
-        })
-        .toFile(outPath);
+      const img = await Jimp.read(srcPath);
+      img.crop({
+        x: Math.round(cropX),
+        y: Math.round(cropY),
+        w: Math.round(cropWidth),
+        h: Math.round(cropHeight),
+      });
+      await img.write(outPath);
 
       results.push({ file, success: true });
     }
 
-    const outDir = path.join(jobs[0].folder, "cropped");
+    const outDir = path.join(path.resolve(jobs[0].folder), "cropped");
     res.json({ success: true, count: results.length, outputFolder: outDir, results });
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -157,9 +163,9 @@ app.post("/api/crop", async (req, res) => {
 });
 
 // ─── Start server ───────────────────────────────────────────────────────────
-const PORT = process.env.PORT || 3456;
+const parsedPort = parseInt(process.env.PORT, 10);
+const PORT = (parsedPort > 0 && parsedPort <= 65535) ? parsedPort : 3456;
 
-// Track the active server instance so signal handlers always close the right one
 let activeServer = null;
 
 function startServer(port, retriesRemaining) {
@@ -174,28 +180,24 @@ function startServer(port, retriesRemaining) {
       startServer(port + 1, retriesRemaining - 1);
     } else {
       console.error("[FrameCrop] Server error:", err.message);
-      // Exit so Pinokio detects the failure cleanly instead of leaving a zombie process
       process.exit(1);
     }
   });
 }
 
-// Register signal handlers once, referencing the active server
-process.once("SIGTERM", () => {
-  console.log("[FrameCrop] Received SIGTERM, shutting down…");
+const SHUTDOWN_TIMEOUT_MS = 5000;
+
+function shutdown() {
   if (activeServer) {
     activeServer.close(() => process.exit(0));
+    // Force exit if connections don't close in time
+    setTimeout(() => process.exit(0), SHUTDOWN_TIMEOUT_MS).unref();
   } else {
     process.exit(0);
   }
-});
-process.once("SIGINT", () => {
-  console.log("[FrameCrop] Received SIGINT, shutting down…");
-  if (activeServer) {
-    activeServer.close(() => process.exit(0));
-  } else {
-    process.exit(0);
-  }
-});
+}
+
+process.once("SIGTERM", shutdown);
+process.once("SIGINT", shutdown);
 
 startServer(PORT, 3);

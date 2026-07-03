@@ -19,7 +19,7 @@ A Pinokio 7.x app for batch-cropping images to a chosen aspect ratio using a dra
 
 1. Clone or download this repository into your Pinokio `api/` folder.
 2. Open Pinokio and find **FrameCrop** in the app list.
-3. Click **Install** — this runs `npm install` to fetch dependencies (`express`, `sharp`).
+3. Click **Install** — this runs `npm install` to fetch dependencies (`express`, `jimp`).
 4. Click **Start** — launches the Express server and opens the web UI.
 
 ## Manual Usage (without Pinokio)
@@ -44,20 +44,9 @@ npm install
 If the problem persists, try a clean reinstall:
 
 ```bash
-rm -rf node_modules
-npm cache clean --force
+rm -rf node_modules package-lock.json
 npm install
 ```
-
-### Sharp fails to load
-
-Sharp requires platform-specific native binaries. If you see errors related to sharp, run:
-
-```bash
-npm install --force
-```
-
-This ensures the correct binaries are downloaded for your operating system.
 
 ## How It Works
 
@@ -79,6 +68,6 @@ This ensures the correct binaries are downloaded for your operating system.
 
 ## Tech Stack
 
-- **Backend:** Node.js, Express, Sharp
+- **Backend:** Node.js, Express, Jimp (pure JavaScript – no native binaries)
 - **Frontend:** Vanilla HTML/CSS/JS (no build step)
 - **Pinokio:** 7.x compatible scripts (`pinokio.js`, `install.js`, `start.js`, `reset.js`)

@@ -1,30 +1,21 @@
 /**
  * install.js – Install Node.js dependencies for FrameCrop
  *
- * Sharp requires platform-specific native binaries. This script ensures they
- * are properly installed regardless of the host OS by:
- * 1. Cleaning any prior broken sharp installs
- * 2. Installing all dependencies with --force to ensure platform binaries are fetched
- * 3. Verifying sharp can actually be loaded
+ * Uses Jimp (pure JavaScript) so no native binary compilation is needed.
+ * A simple npm install is sufficient on all platforms.
  */
 module.exports = {
   run: [
     {
       method: "shell.run",
       params: {
-        message: "npm cache clean --force",
+        message: "npm install",
       },
     },
     {
       method: "shell.run",
       params: {
-        message: "npm install --force",
-      },
-    },
-    {
-      method: "shell.run",
-      params: {
-        message: "node -e \"require('express'); require('sharp'); console.log('All dependencies OK')\"",
+        message: "node -e \"const { Jimp } = require('jimp'); require('express'); console.log('All dependencies OK')\"",
       },
     },
     {
