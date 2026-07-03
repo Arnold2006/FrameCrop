@@ -1,0 +1,13 @@
+{
+  "name": "framecrop",
+  "version": "1.0.0",
+  "description": "Batch-crop images to a chosen aspect ratio with a draggable/resizable crop overlay",
+  "main": "server/index.js",
+  "scripts": {
+    "start": "node server/index.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "sharp": "^0.33.2"
+  }
+}
